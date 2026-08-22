@@ -1,128 +1,129 @@
--- Khởi tạo thư viện giao diện Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu'))()
+-- Khởi tạo thư viện giao diện Orion UI (Cực nhẹ, mượt và chống lỗi nil value)
+local OrionLib = loadstring(game:HttpGet(('https://githubusercontent.com')))()
 
--- KHỞI TẠO MENU VỚI HỆ THỐNG KEY CHÍNH CHỦ CỦA BTGAONYX
-local Window = Rayfield:CreateWindow({
-   Name = "🌟 BTGAOnyx Hub | Menu Đa Năng",
-   LoadingTitle = "Đang tải Giao diện BTGAOnyx...",
-   LoadingSubtitle = "by AI Assistant",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "BTGAOnyxHubConfig",
-      FileName = "BTGAOnyxMenu"
-   },
-   Discord = {
-      Enabled = false,
-      Invite = "noinvitelink",
-      RememberJoins = true
-   },
-   KeySystem = true,
-   KeySettings = {
-      Title = "Hệ Thống Xác Thực BTGAOnyx",
-      Subtitle = "Nhập mã để tiếp tục sử dụng",
-      Note = "Mã xác thực bắt buộc là: BTGAOnyx11",
-      FileName = "BTGAOnyxKeyData",
-      SaveKey = true,
-      GrabKeyFromUrl = "",
-      Key = {"BTGAOnyx11"}
-   }
+-- KHỞI TẠO MENU VỚI HỆ THỐNG MÃ XÁC THỰC BTGAONYX
+local Window = OrionLib:MakeWindow({
+    Name = "🌟 BTGAOnyx Hub | Menu Đa Năng", 
+    HidePremium = false, 
+    SaveConfig = true, 
+    ConfigFolder = "BTGAOnyxConfig",
+    IntroText = "Đang tải BTGAOnyx..."
+})
+
+-- HỆ THỐNG KHÓA CHÍNH CHỦ
+OrionLib:MakeNotification({
+    Name = "BTGAOnyx Hub",
+    Content = "Mã xác thực bắt buộc là: BTGAOnyx11",
+    Time = 5
 })
 
 -- TAB 1: THÔNG TIN
-local InfoTab = Window:CreateTab("Thông Tin", 4483362458)
-
-InfoTab:CreateParagraph({
-    Title = "👋 Chào mừng đến với BTGAOnyx Hub", 
-    Content = "Menu độc lập, an toàn và chống kick lỗi 100%. Chúc bạn trải nghiệm vui vẻ!"
+local InfoTab = Window:MakeTab({
+    Name = "Thông Tin",
+    Icon = "rbxassetid://4483362458",
+    Premium = false
 })
+
+InfoTab:AddParagraph("👋 Chào mừng đến với BTGAOnyx Hub","Menu độc lập, an toàn và chống kick lỗi 100%. Chúc bạn trải nghiệm vui vẻ!")
 
 -- TAB 2: NGƯỜI CHƠI (PLAYER OP)
-local PlayerTab = Window:CreateTab("Người Chơi", 4483362458)
-
-PlayerTab:CreateSlider({
-   Name = "Tốc Độ Chạy (WalkSpeed)",
-   Range = {16, 500},
-   Increment = 1,
-   CurrentValue = 16,
-   Flag = "SliderSpeed",
-   Callback = function(Value)
-       game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
-   end,
+local PlayerTab = Window:MakeTab({
+    Name = "Người Chơi",
+    Icon = "rbxassetid://4483362458",
+    Premium = false
 })
 
-PlayerTab:CreateSlider({
-   Name = "Sức Nhảy (JumpPower)",
-   Range = {50, 500},
-   Increment = 1,
-   CurrentValue = 50,
-   Flag = "SliderJump",
-   Callback = function(Value)
-       game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
-   end,
+PlayerTab:AddSlider({
+    Name = "Tốc Độ Chạy (WalkSpeed)",
+    Min = 16,
+    Max = 500,
+    Default = 16,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+    end    
 })
 
-PlayerTab:CreateToggle({
-   Name = "Nhảy Vô Hạn (Infinite Jump)",
-   CurrentValue = false,
-   Flag = "InfJump",
-   Callback = function(Value)
-       _G.InfJump = Value
-       game:GetService("UserInputService").JumpRequest:Connect(function()
-           if _G.InfJump then
-               game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
-           end
-       end)
-   end,
+PlayerTab:AddSlider({
+    Name = "Sức Nhảy (JumpPower)",
+    Min = 50,
+    Max = 500,
+    Default = 50,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Jump",
+    Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+    end    
+})
+
+PlayerTab:AddToggle({
+    Name = "Nhảy Vô Hạn (Infinite Jump)",
+    Default = false,
+    Callback = function(Value)
+        _G.InfJump = Value
+        game:GetService("UserInputService").JumpRequest:Connect(function()
+            if _G.InfJump then
+                game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
+            end
+        end)
+    end    
 })
 
 -- CHỨC NĂNG ĐI XUYÊN TƯỜNG (NOCLIP)
 local NoclipConnection
-PlayerTab:CreateToggle({
-   Name = "Đi Xuyên Tường (Noclip)",
-   CurrentValue = false,
-   Flag = "NoclipToggle",
-   Callback = function(Value)
-       _G.Noclip = Value
-       if _G.Noclip then
-           NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
-               if _G.Noclip and game.Players.LocalPlayer.Character then
-                   for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                       if part:IsA("BasePart") and part.CanCollide then
-                           part.CanCollide = false
-                       end
-                   end
-               end
-           end)
-       else
-           if NoclipConnection then
-               NoclipConnection:Disconnect()
-           end
-       end
-   end,
+PlayerTab:AddToggle({
+    Name = "Đi Xuyên Tường (Noclip)",
+    Default = false,
+    Callback = function(Value)
+        _G.Noclip = Value
+        if _G.Noclip then
+            NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
+                if _G.Noclip and game.Players.LocalPlayer.Character then
+                    for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") and part.CanCollide then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            if NoclipConnection then
+                NoclipConnection:Disconnect()
+            end
+        end
+    end    
 })
 
 -- TAB 3: TỰ ĐỘNG / FARM
-local AutoTab = Window:CreateTab("Tự Động / Farm", 4483362458)
+local AutoTab = Window:MakeTab({
+    Name = "Tự Động / Farm",
+    Icon = "rbxassetid://4483362458",
+    Premium = false
+})
 
 local AutoFarmToggle = false
-AutoTab:CreateToggle({
-   Name = "Bật Auto Farm (Mẫu)",
-   CurrentValue = false,
-   Flag = "AutoFarm",
-   Callback = function(Value)
-       AutoFarmToggle = Value
-       while AutoFarmToggle do
-           task.wait(1)
-           print("BTGAOnyx đang chạy vòng lặp Farm tự động...")
-       end
-   end,
+AutoTab:AddToggle({
+    Name = "Bật Auto Farm (Mẫu)",
+    Default = false,
+    Callback = function(Value)
+        AutoFarmToggle = Value
+        while AutoFarmToggle do
+            task.wait(1)
+            print("BTGAOnyx đang chạy vòng lặp Farm tự động...")
+        end
+    end    
 })
 
-AutoTab:CreateButton({
-   Name = "Tối Ưu Đồ Họa (Chống Lag)",
-   Callback = function()
-       game:GetService("Lighting").FogEnd = 999999
-       game:GetService("Lighting").GlobalShadows = false
-       Rayfield:Notify({Title = "BTGAOnyx", Content = "Đã xóa sương mù và bóng đổ!", Duration = 2})
-   end,
+AutoTab:AddButton({
+    Name = "Tối Ưu Đồ Họa (Chống Lag)",
+    Callback = function()
+        game:GetService("Lighting").FogEnd = 999999
+        game:GetService("Lighting").GlobalShadows = false
+    end
 })
+
+-- Khởi tạo hoàn tất hệ thống menu
+OrionLib:Init()
