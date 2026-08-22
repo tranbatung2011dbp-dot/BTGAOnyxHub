@@ -1,41 +1,89 @@
--- Khởi tạo thư viện giao diện Kavo UI (Siêu ổn định, chống lỗi nil value)
-local KavoUi = loadstring(game:HttpGet("https://githubusercontent.com"))()
+-- TỰ TẠO GIAO DIỆN THUẦN (KHÔNG DÙNG LINK NGOÀI - CHỐNG LỖI NIL VALUE 100%)
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local SpeedBtn = Instance.new("TextButton")
+local JumpBtn = Instance.new("TextButton")
+local NoclipBtn = Instance.new("TextButton")
+local CloseBtn = Instance.new("TextButton")
 
--- KHỞI TẠO MENU BTGAONYX
-local Window = KavoUi.CreateLib("🌟 BTGAOnyx Hub | Menu Đa Năng", "DarkTheme")
+-- Cài đặt vị trí và giao diện Menu (Tông màu tối đen đỏ ngầu)
+ScreenGui.Parent = game.CoreGui
+MainFrame.Name = "BTGAOnyxMenu"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 250, 0, 300)
+MainFrame.Active = true
+MainFrame.Draggable = true -- Có thể giữ chuột để di chuyển menu trên màn hình
 
--- ====================================================================
--- CÁC TAB TÍNH NĂNG CHÍNH
--- ====================================================================
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Title.Text = "🌟 BTGAOnyx Hub 🌟"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
+Title.TextSize = 18
+Title.Font = Enum.Font.SourceSansBold
 
--- TAB 1: NGƯỜI CHƠI
-local PlayerTab = Window:NewTab("Người Chơi")
-local PlayerSection = PlayerTab:NewSection("Tính Năng Người Chơi")
+-- NÚT BẬT TỐC ĐỘ (WalkSpeed)
+SpeedBtn.Parent = MainFrame
+SpeedBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+SpeedBtn.Size = UDim2.new(0.8, 0, 0, 40)
+SpeedBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SpeedBtn.Text = "⚡ Tăng Tốc Chạy (Bật/Tắt)"
+SpeedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBtn.TextSize = 14
 
-PlayerSection:NewSlider("Tốc Độ Chạy (WalkSpeed)", "Thay đổi tốc độ chạy của bạn", 500, 16, function(Value)
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+local speedActive = false
+SpeedBtn.MouseButton1Click:Connect(function()
+    speedActive = not speedActive
+    if speedActive then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 100
+        SpeedBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    else
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+        SpeedBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
 end)
 
-PlayerSection:NewSlider("Sức Nhảy (JumpPower)", "Thay đổi sức nhảy của bạn", 500, 50, function(Value)
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+-- NÚT BẬT NHẢY CAO (JumpPower)
+JumpBtn.Parent = MainFrame
+JumpBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+JumpBtn.Size = UDim2.new(0.8, 0, 0, 40)
+JumpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+JumpBtn.Text = "🦘 Nhảy Cao (Bật/Tắt)"
+JumpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpBtn.TextSize = 14
+
+local jumpActive = false
+JumpBtn.MouseButton1Click:Connect(function()
+    jumpActive = not jumpActive
+    if jumpActive then
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 150
+        JumpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    else
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+        JumpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
 end)
 
-PlayerSection:NewToggle("Nhảy Vô Hạn", "Bật để nhảy liên tục trên không", function(Value)
-    _G.InfJump = Value
-    game:GetService("UserInputService").JumpRequest:Connect(function()
-        if _G.InfJump then
-            game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid'):ChangeState("Jumping")
-        end
-    end)
-end)
+-- NÚT ĐI XUYÊN TƯỜNG (Noclip)
+NoclipBtn.Parent = MainFrame
+NoclipBtn.Position = UDim2.new(0.1, 0, 0.6, 0)
+NoclipBtn.Size = UDim2.new(0.8, 0, 0, 40)
+NoclipBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+NoclipBtn.Text = "🧱 Xuyên Tường (Bật/Tắt)"
+NoclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoclipBtn.TextSize = 14
 
--- CHỨC NĂNG ĐI XUYÊN TƯỜNG (NOCLIP)
+local noclipActive = false
 local NoclipConnection
-PlayerSection:NewToggle("Đi Xuyên Tường (Noclip)", "Bật để đi xuyên qua mọi vật thể", function(Value)
-    _G.Noclip = Value
-    if _G.Noclip then
+NoclipBtn.MouseButton1Click:Connect(function()
+    noclipActive = not noclipActive
+    if noclipActive then
+        NoclipBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
-            if _G.Noclip and game.Players.LocalPlayer.Character then
+            if noclipActive and game.Players.LocalPlayer.Character then
                 for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
                     if part:IsA("BasePart") and part.CanCollide then
                         part.CanCollide = false
@@ -44,26 +92,19 @@ PlayerSection:NewToggle("Đi Xuyên Tường (Noclip)", "Bật để đi xuyên 
             end
         end)
     else
-        if NoclipConnection then
-            NoclipConnection:Disconnect()
-        end
+        NoclipBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        if NoclipConnection then NoclipConnection:Disconnect() end
     end
 end)
 
--- TAB 2: TỰ ĐỘNG / FARM
-local AutoTab = Window:NewTab("Tự Động")
-local AutoSection = AutoTab:NewSection("Tự Động / Khác")
-
-local AutoFarmToggle = false
-AutoSection:NewToggle("Bật Auto Farm (Mẫu)", "Vòng lặp tự động nhặt đồ hoặc farm", function(Value)
-    AutoFarmToggle = Value
-    while AutoFarmToggle do
-        task.wait(1)
-        print("BTGAOnyx đang chạy vòng lặp Farm tự động...")
-    end
-end)
-
-AutoSection:NewButton("Tối Ưu Đồ Họa (Chống Lag)", "Xóa sương mù và giảm bóng đổ", function()
-    game:GetService("Lighting").FogEnd = 999999
-    game:GetService("Lighting").GlobalShadows = false
+-- NÚT ĐÓNG MENU
+CloseBtn.Parent = MainFrame
+CloseBtn.Position = UDim2.new(0.1, 0, 0.8, 0)
+CloseBtn.Size = UDim2.new(0.8, 0, 0, 35)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+CloseBtn.Text = "❌ Tắt Menu"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
