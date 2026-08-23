@@ -1,119 +1,94 @@
--- KỊCH BẢN BLOX FRUITS ĐỘC LẬP 100% - KHÔNG LIÊN QUAN ĐẾN QUANTUM
-local Fluent = loadstring(game:HttpGet("https://github.com"))()
-
-local Window = Fluent:CreateWindow({
-    Title = "🌟 BTGAOnyx Hub | Blox Fruits Edition",
-    SubTitle = "Bản Độc Lập Không Key",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, -- Tắt mờ kính để tối ưu hóa mượt mà cho mọi thiết bị
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl
-})
-
--- Tự động phân chia các Tab chức năng thịnh hành
-local Tabs = {
-    Main = Window:AddTab({ Title = "Tự Động Farm", Icon = "scroll" }),
-    Player = Window:AddTab({ Title = "Người Chơi", Icon = "user" }),
-    Fruit = Window:AddTab({ Title = "Trái Ác Quỷ", Icon = "apple" })
+-- MENU CẤU HÌNH TÍNH NĂNG (Bật = true, Tắt = false)
+local Config = {
+    AutoFarm = false,       -- Tự động đánh quái theo cấp độ
+    BringMob = true,        -- Gom tất cả quái lại 1 điểm để đánh nhanh hơn
+    AutoHaki = true,        -- Tự động bật Haki vũ trang khi hồi chiêu
+    AutoChest = false,      -- Tự động bay đi nhặt rương kiếm Beli
+    FullBright = true,      -- Hack sáng toàn bản đồ, xóa bóng tối
+    InfiniteZoom = true,    -- Mở rộng khoảng cách góc nhìn Camera (Zoom cực xa)
+    AutoStats = {
+        Enabled = false,    -- Tự động cộng điểm nâng chỉ số
+        Target = "Melee"    -- Lựa chọn: "Melee", "Defense", "Sword", "Gun", "Blox Fruit"
+    }
 }
 
--- --------------------------------------------------------------------
--- TAB 1: CHỨC NĂNG FARM CÀY CUỐC
--- --------------------------------------------------------------------
-local ToggleFarm = Tabs.Main:AddToggle("AutoFarmLevel", {Title = "Bật Auto Farm Level", Default = false })
-ToggleFarm:OnChanged(function()
-    _G.AutoFarm = Fluent.Options.AutoFarmLevel.Value
-    spawn(function()
-        while _G.AutoFarm do
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+
+-- 1. TÍNH NĂNG: HACK SÁNG (FULLBRIGHT)
+if Config.FullBright then
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 14
+    Lighting.GlobalShadows = false
+end
+
+-- 2. TÍNH NĂNG: MỞ RỘNG TẦM NHÌN CAMERA (INFINITE ZOOM)
+if Config.InfiniteZoom then
+    LocalPlayer.CameraMaxZoomDistance = 100000
+end
+
+-- 3. TÍNH NĂNG: TỰ ĐỘNG BẬT HAKI
+task.spawn(function()
+    while task.wait(1) do
+        if Config.AutoHaki and LocalPlayer.Character then
+            if not LocalPlayer.Character:FindFirstChild("HasBuso") then
+                pcall(function()
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+                end)
+            end
+        end
+    end
+end)
+
+-- 4. TÍNH NĂNG: TỰ ĐỘNG CỘNG ĐIỂM (AUTO STATS)
+task.spawn(function()
+    while task.wait(0.5) do
+        if Config.AutoStats.Enabled then
             pcall(function()
-                for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and game.Players.LocalPlayer.Character then
-                        -- Dịch chuyển né đòn lên đầu quái
-                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
-                        -- Lệnh tự động click tấn công
-                        local VirtualUser = game:GetService('VirtualUser')
-                        VirtualUser:CaptureController()
-                        VirtualUser:ClickButton1(Vector2.new(850, 520))
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", Config.AutoStats.Target, 1)
+            end)
+        end
+    end
+end)
+
+-- 5. TÍNH NĂNG: GOM QUÁI (BRING MOB) & AUTO FARM (MẪU ĐỊNH HƯỚNG)
+task.spawn(function()
+    while task.wait(0.1) do
+        if Config.BringMob then
+            pcall(function()
+                -- Hệ thống quét và gom quái lại gần vị trí người chơi trong bán kính 300m
+                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
+                        local myPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if myPart and (enemy.HumanoidRootPart.Position - myPart.Position).Magnitude < 300 then
+                            enemy.HumanoidRootPart.CFrame = myPart.CFrame * CFrame.new(0, 0, -5)
+                            enemy.HumanoidRootPart.CanCollide = false
+                        end
                     end
                 end
             end)
-            task.wait(0.1)
         end
-    end)
-end)
-
-local ToggleAttack = Tabs.Main:AddToggle("FastAttackSpeed", {Title = "Bật Siêu Tốc Đánh (Fast Attack)", Default = false })
-ToggleAttack:OnChanged(function()
-    _G.FastAttack = Fluent.Options.FastAttackSpeed.Value
-    spawn(function()
-        while _G.FastAttack do
-            pcall(function()
-                local CombatFramework = require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatFramework)
-                if CombatFramework and CombatFramework.activeController then
-                    CombatFramework.activeController.hitboxMagnitude = 65 -- Mở rộng tầm đánh trúng quái
-                    CombatFramework.activeController:attack()
-                end
-            end)
-            task.wait(0.005)
-        end
-    end)
-end)
-
--- --------------------------------------------------------------------
--- TAB 2: BỔ TRỢ NGƯỜI CHƠI
--- --------------------------------------------------------------------
-Tabs.Player:AddSlider("WalkSpeedSlider", {
-    Title = "Tốc Độ Di Chuyển",
-    Min = 16, Max = 300, Default = 16, Rounding = 0,
-    Callback = function(Value)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
     end
-})
+end)
 
-local ToggleNoclip = Tabs.Player:AddToggle("NoclipMode", {Title = "Đi Xuyên Tường (Noclip)", Default = false })
-local NoclipConnection
-ToggleNoclip:OnChanged(function()
-    _G.Noclip = Fluent.Options.NoclipMode.Value
-    if _G.Noclip then
-        NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
-            if _G.Noclip and game.Players.LocalPlayer.Character then
-                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide then
-                        part.CanCollide = false
+-- 6. TÍNH NĂNG: TỰ ĐỘNG NHẶT RƯƠNG (AUTO CHEST)
+task.spawn(function()
+    while task.wait(0.1) do
+        if Config.AutoChest then
+            pcall(function()
+                -- Tìm và dịch chuyển trực tiếp đến rương gần nhất
+                for _, chest in pairs(workspace:GetChildren()) do
+                    if string.find(chest.name, "Chest") and chest:IsA("Part") then
+                        local myPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if myPart then
+                            myPart.CFrame = chest.CFrame
+                            task.wait(0.2)
+                        end
                     end
                 end
-            end
-        end)
-    else
-        if NoclipConnection then NoclipConnection:Disconnect() end
+            end)
+        end
     end
 end)
-
--- --------------------------------------------------------------------
--- TAB 3: QUẢN LÝ TRÁI ÁC QUỶ
--- --------------------------------------------------------------------
-Tabs.Fruit:AddButton({
-    Title = "Dịch Chuyển Nhặt Trái Ác Quỷ Rơi (Toàn Bản Đồ)",
-    Callback = function()
-        local found = false
-        for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
-            if v:IsA("Tool") and string.find(v.Name, "Fruit") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
-                found = true
-            end
-        end
-        if not found then
-            Fluent:Notify({ Title = "Thông Báo", Content = "Hiện không có trái ác quỷ nào rơi trên map!", Duration = 3 })
-        end
-    end
-})
-
-Tabs.Fruit:AddButton({
-    Title = "Random Trái Ác Quỷ (Gacha Fruit)",
-    Callback = function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin","Buy")
-    end
-})
-
-Window:SelectTab(1)
