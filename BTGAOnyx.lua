@@ -1,94 +1,165 @@
--- MENU CẤU HÌNH TÍNH NĂNG (Bật = true, Tắt = false)
+
+--========================================================
+-- BLOX FRUITS ADVANCED FRAMEWORK - DARK PRO
+-- VERSION: 3.2.0
+-- PLATFORM: ROBLOX STUDIO
+-- FOCUS: STABILITY / QUEST / COMBAT / GUI
+--========================================================
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--========================================================
+-- CONFIGURATION
+--========================================================
+
 local Config = {
-    AutoFarm = false,       -- Tự động đánh quái theo cấp độ
-    BringMob = true,        -- Gom tất cả quái lại 1 điểm để đánh nhanh hơn
-    AutoHaki = true,        -- Tự động bật Haki vũ trang khi hồi chiêu
-    AutoChest = false,      -- Tự động bay đi nhặt rương kiếm Beli
-    FullBright = true,      -- Hack sáng toàn bản đồ, xóa bóng tối
-    InfiniteZoom = true,    -- Mở rộng khoảng cách góc nhìn Camera (Zoom cực xa)
-    AutoStats = {
-        Enabled = false,    -- Tự động cộng điểm nâng chỉ số
-        Target = "Melee"    -- Lựa chọn: "Melee", "Defense", "Sword", "Gun", "Blox Fruit"
+    AutoQuestTracker = true,
+    SafeCombat = true,
+    MobScanner = true,
+    FullBright = false,
+    InfiniteZoom = false,
+
+    MaxZoom = 10000,
+    Brightness = 2,
+    ClockTime = 14,
+
+    MobDistance = 300,
+    UpdateInterval = 1,
+    MobScanInterval = 2,
+    MaxLogs = 50,
+
+    Stats = {
+        Target = "Melee",
+        Enabled = false
     }
 }
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Lighting = game:GetService("Lighting")
+--========================================================
+-- STATE
+--========================================================
 
--- 1. TÍNH NĂNG: HACK SÁNG (FULLBRIGHT)
-if Config.FullBright then
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 14
-    Lighting.GlobalShadows = false
+local State = {
+    Running = true,
+    Character = nil,
+    Humanoid = nil,
+    Root = nil,
+
+    Level = 1,
+    Health = 0,
+    MaxHealth = 0,
+
+    CurrentQuest = nil,
+    NearbyMobs = 0,
+    CombatStatus = "INITIALIZING",
+
+    Connections = {},
+    Logs = {}
+}
+
+--========================================================
+-- ORIGINAL SETTINGS
+--========================================================
+
+local OriginalLighting = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    GlobalShadows = Lighting.GlobalShadows
+}
+
+local OriginalZoom = Player.CameraMaxZoomDistance
+
+--========================================================
+-- LOGGER
+--========================================================
+
+local function Log(message, category)
+    category = category or "INFO"
+
+    local entry = {
+        Time = os.date("%H:%M:%S"),
+        Category = category,
+        Message = tostring(message)
+    }
+
+    table.insert(State.Logs, entry)
+
+    if #State.Logs > Config.MaxLogs then
+        table.remove(State.Logs, 1)
+    end
+
+    print("[DARK PRO][" .. category .. "] " .. tostring(message))
 end
 
--- 2. TÍNH NĂNG: MỞ RỘNG TẦM NHÌN CAMERA (INFINITE ZOOM)
-if Config.InfiniteZoom then
-    LocalPlayer.CameraMaxZoomDistance = 100000
+local function SafeCall(name, callback)
+    local success, result = pcall(callback)
+
+    if not success then
+        Log(name .. ": " .. tostring(result), "ERROR")
+        return false
+    end
+
+    return true, result
 end
 
--- 3. TÍNH NĂNG: TỰ ĐỘNG BẬT HAKI
-task.spawn(function()
-    while task.wait(1) do
-        if Config.AutoHaki and LocalPlayer.Character then
-            if not LocalPlayer.Character:FindFirstChild("HasBuso") then
-                pcall(function()
-                    ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
-                end)
-            end
-        end
-    end
-end)
+local function AddConnection(connection)
+    table.insert(State.Connections, connection)
+    return connection
+end
 
--- 4. TÍNH NĂNG: TỰ ĐỘNG CỘNG ĐIỂM (AUTO STATS)
-task.spawn(function()
-    while task.wait(0.5) do
-        if Config.AutoStats.Enabled then
-            pcall(function()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", Config.AutoStats.Target, 1)
-            end)
-        end
-    end
-end)
+--========================================================
+-- CHARACTER MANAGER
+--========================================================
 
--- 5. TÍNH NĂNG: GOM QUÁI (BRING MOB) & AUTO FARM (MẪU ĐỊNH HƯỚNG)
-task.spawn(function()
-    while task.wait(0.1) do
-        if Config.BringMob then
-            pcall(function()
-                -- Hệ thống quét và gom quái lại gần vị trí người chơi trong bán kính 300m
-                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                    if enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
-                        local myPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if myPart and (enemy.HumanoidRootPart.Position - myPart.Position).Magnitude < 300 then
-                            enemy.HumanoidRootPart.CFrame = myPart.CFrame * CFrame.new(0, 0, -5)
-                            enemy.HumanoidRootPart.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
+local CharacterManager = {}
 
--- 6. TÍNH NĂNG: TỰ ĐỘNG NHẶT RƯƠNG (AUTO CHEST)
-task.spawn(function()
-    while task.wait(0.1) do
-        if Config.AutoChest then
-            pcall(function()
-                -- Tìm và dịch chuyển trực tiếp đến rương gần nhất
-                for _, chest in pairs(workspace:GetChildren()) do
-                    if string.find(chest.name, "Chest") and chest:IsA("Part") then
-                        local myPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if myPart then
-                            myPart.CFrame = chest.CFrame
-                            task.wait(0.2)
-                        end
-                    end
-                end
-            end)
-        end
+function CharacterManager.Update(character)
+    character = character or Player.Character
+
+    if not character then
+        return false
     end
-end)
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = character:FindFirstChild("HumanoidRootPart")
+
+    if not humanoid or not root or humanoid.Health <= 0 then
+        return false
+    end
+
+    State.Character = character
+    State.Humanoid = humanoid
+    State.Root = root
+
+    return true
+end
+
+AddConnection(Player.CharacterAdded:Connect(function(character)
+    task.spawn(function()
+        local humanoid = character:WaitForChild("Humanoid", 10)
+        local root = character:WaitForChild("HumanoidRootPart", 10)
+
+        if State.Running and humanoid and root then
+            CharacterManager.Update(character)
+            Log("Character initialized")
+        end
+    end)
+end))
+
+AddConnection(Player.CharacterRemoving:Connect(function()
+    State.Character = nil
+    State.Humanoid = nil
+    State.Root = nil
+    State.Health = 0
+    State.MaxHealth = 0
+    State.CombatStatus = "RESPAWNING"
+end))
+
+CharacterManager.Update()
+
+--========================================================
+--
